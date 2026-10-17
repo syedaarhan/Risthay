@@ -42,3 +42,10 @@ next-env.d.ts
 
 # scratch
 scratch/
+
+# sqlite local databases & wal lock files
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+data/*.db*

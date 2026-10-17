@@ -6,6 +6,7 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import os from "node:os";
 
 import {
   PROFILES_DATA,
@@ -20,7 +21,28 @@ const SUPPORT_ID = "support";
 function resolveDatabaseFile() {
   const configured = process.env.RISTHAY_DB_PATH;
   if (configured) return configured;
-  return path.join(process.cwd(), "data", "risthay.db");
+
+  // On Vercel / AWS Lambda / Serverless environments, process.cwd() is read-only (/var/task).
+  // The only guaranteed writable directory on serverless runtimes is /tmp.
+  const isServerless = Boolean(
+    process.env.VERCEL ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.LAMBDA_TASK_ROOT ||
+    process.env.VERCEL_ENV
+  );
+
+  if (isServerless) {
+    return path.join("/tmp", "risthay.db");
+  }
+
+  // Local development / persistent server environment:
+  try {
+    const localDir = path.join(process.cwd(), "data");
+    fs.mkdirSync(localDir, { recursive: true });
+    return path.join(localDir, "risthay.db");
+  } catch {
+    return path.join(os.tmpdir(), "risthay.db");
+  }
 }
 
 function createSchema(database) {
@@ -648,16 +670,70 @@ function ensureSyedAdmin(database) {
 export function getDb() {
   if (globalThis.__risthay_db) return globalThis.__risthay_db;
 
-  const file = resolveDatabaseFile();
-  fs.mkdirSync(path.dirname(file), { recursive: true });
+  let database;
+  let filePath;
 
-  const database = new DatabaseSync(file);
-  database.exec("PRAGMA journal_mode = WAL;");
-  createSchema(database);
-  ensureColumns(database);
-  seedDatabase(database);
-  seedAdminData(database);
-  ensureSyedAdmin(database);
+  try {
+    filePath = resolveDatabaseFile();
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(/*turbopackIgnore: true*/ dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+
+    // Ensure write permissions if file already exists
+    if (fs.existsSync(/*turbopackIgnore: true*/ filePath)) {
+      try {
+        fs.chmodSync(filePath, 0o666);
+      } catch {
+        // ignore chmod errors on platforms where unsupported
+      }
+    }
+
+    database = new DatabaseSync(filePath);
+  } catch (err) {
+    console.warn(`Failed to open SQLite database at ${filePath}: ${err?.message}. Falling back to /tmp...`);
+    try {
+      const fallbackPath = path.join(os.tmpdir(), `risthay-${Date.now()}.db`);
+      database = new DatabaseSync(fallbackPath);
+      filePath = fallbackPath;
+    } catch (err2) {
+      console.warn(`Fallback to temp file failed: ${err2?.message}. Falling back to in-memory database.`);
+      database = new DatabaseSync(":memory:");
+      filePath = ":memory:";
+    }
+  }
+
+  // Configure journal mode safely based on environment
+  try {
+    if (process.env.VERCEL || filePath === ":memory:") {
+      database.exec("PRAGMA journal_mode = MEMORY;");
+    } else {
+      database.exec("PRAGMA journal_mode = WAL;");
+    }
+  } catch {
+    try {
+      database.exec("PRAGMA journal_mode = DELETE;");
+    } catch {
+      // continue even if pragma fails
+    }
+  }
+
+  try {
+    database.exec("PRAGMA busy_timeout = 5000;");
+    database.exec("PRAGMA synchronous = NORMAL;");
+  } catch {
+    // ignore
+  }
+
+  try {
+    createSchema(database);
+    ensureColumns(database);
+    seedDatabase(database);
+    seedAdminData(database);
+    ensureSyedAdmin(database);
+  } catch (seedErr) {
+    console.error("Error during database schema/seed initialization:", seedErr);
+  }
 
   globalThis.__risthay_db = database;
   return database;
