@@ -349,7 +349,7 @@ export default function AdminApplicationsPage() {
                     {/* Action */}
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right" }}>
                       <Link
-                        href={`/admin/profiles/${p.id}`}
+                        href={`/syedristhay/profiles/${p.id}`}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",

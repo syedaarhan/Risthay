@@ -149,7 +149,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <Link
-                href="/admin/applications"
+                href="/syedristhay/applications"
                 style={{
                   padding: "7px 12px",
                   borderRadius: "10px",
@@ -203,7 +203,7 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <Link
-                href="/admin/subscriptions?status=expiring_soon"
+                href="/syedristhay/subscriptions?status=expiring_soon"
                 style={{
                   padding: "7px 12px",
                   borderRadius: "10px",
@@ -550,7 +550,7 @@ export default function AdminDashboardPage() {
           </div>
 
           <Link
-            href="/admin/applications"
+            href="/syedristhay/applications"
             style={{
               fontSize: "13px",
               fontWeight: "700",
@@ -637,7 +637,7 @@ export default function AdminDashboardPage() {
 
                     <td style={{ padding: "12px 14px", textAlign: "right" }}>
                       <Link
-                        href={`/admin/profiles/${profile.id}`}
+                        href={`/syedristhay/profiles/${profile.id}`}
                         style={{
                           display: "inline-flex",
                           alignItems: "center",

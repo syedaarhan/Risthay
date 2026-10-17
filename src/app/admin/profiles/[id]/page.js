@@ -211,7 +211,7 @@ export default function AdminProfileReviewPage() {
         <h2 style={{ fontSize: "1.3rem", fontWeight: "700", color: "#111827", marginBottom: "0.5rem" }}>Profile Not Found</h2>
         <p style={{ color: "#6b7280", marginBottom: "1.5rem" }}>{error || "Could not retrieve the requested matrimony profile."}</p>
         <Link
-          href="/admin/applications"
+          href="/syedristhay/applications"
           style={{
             display: "inline-flex",
             alignItems: "center",
@@ -273,15 +273,15 @@ export default function AdminProfileReviewPage() {
       {/* Breadcrumb & Navigation */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1.25rem", flexWrap: "wrap", gap: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.85rem", color: "#6b7280" }}>
-          <Link href="/admin" style={{ color: "#059669", textDecoration: "none", fontWeight: "600" }}>Admin</Link>
+          <Link href="/syedristhay" style={{ color: "#059669", textDecoration: "none", fontWeight: "600" }}>Admin</Link>
           <ChevronRight size={14} />
-          <Link href="/admin/applications" style={{ color: "#059669", textDecoration: "none", fontWeight: "600" }}>Profile Applications</Link>
+          <Link href="/syedristhay/applications" style={{ color: "#059669", textDecoration: "none", fontWeight: "600" }}>Profile Applications</Link>
           <ChevronRight size={14} />
           <span style={{ color: "#111827", fontWeight: "600" }}>Profile #{profile.id}</span>
         </div>
 
         <Link
-          href="/admin/applications"
+          href="/syedristhay/applications"
           style={{
             display: "inline-flex",
             alignItems: "center",

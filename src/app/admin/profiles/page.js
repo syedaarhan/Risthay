@@ -295,7 +295,7 @@ export default function AdminApprovedProfilesPage() {
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right" }}>
                       <div style={{ display: "inline-flex", gap: "6px" }}>
                         <Link
-                          href={`/admin/profiles/${p.id}`}
+                          href={`/syedristhay/profiles/${p.id}`}
                           style={{
                             display: "inline-flex",
                             alignItems: "center",
@@ -312,7 +312,7 @@ export default function AdminApprovedProfilesPage() {
                           View Details
                         </Link>
                         <Link
-                          href={`/admin/subscriptions?search=${p.id}`}
+                          href={`/syedristhay/subscriptions?search=${p.id}`}
                           style={{
                             display: "inline-flex",
                             alignItems: "center",

@@ -26,18 +26,18 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/applications", label: "Profile Applications", icon: Users, badgeKey: "pendingApprovals" },
-  { href: "/admin/profiles", label: "Approved Profiles", icon: UserCheck },
-  { href: "/admin/rejected", label: "Rejected Profiles", icon: UserX },
-  { href: "/admin/verification", label: "Verification Center", icon: ShieldCheck, badgeKey: "pendingIdentity" },
-  { href: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard, badgeKey: "expiringIn7Days" },
-  { href: "/admin/payments", label: "Payments", icon: Receipt },
-  { href: "/admin/google-sheets", label: "Google Sheets Sync", icon: FileSpreadsheet },
-  { href: "/admin/notifications", label: "Notifications", icon: Bell },
-  { href: "/admin/users", label: "Admin Users & Permissions", icon: ShieldAlert },
-  { href: "/admin/audit-logs", label: "Audit Logs", icon: History },
-  { href: "/admin/settings", label: "Settings", icon: Settings }
+  { href: "/syedristhay", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/syedristhay/applications", label: "Profile Applications", icon: Users, badgeKey: "pendingApprovals" },
+  { href: "/syedristhay/profiles", label: "Approved Profiles", icon: UserCheck },
+  { href: "/syedristhay/rejected", label: "Rejected Profiles", icon: UserX },
+  { href: "/syedristhay/verification", label: "Verification Center", icon: ShieldCheck, badgeKey: "pendingIdentity" },
+  { href: "/syedristhay/subscriptions", label: "Subscriptions", icon: CreditCard, badgeKey: "expiringIn7Days" },
+  { href: "/syedristhay/payments", label: "Payments", icon: Receipt },
+  { href: "/syedristhay/google-sheets", label: "Google Sheets Sync", icon: FileSpreadsheet },
+  { href: "/syedristhay/notifications", label: "Notifications", icon: Bell },
+  { href: "/syedristhay/users", label: "Admin Users & Permissions", icon: ShieldAlert },
+  { href: "/syedristhay/audit-logs", label: "Audit Logs", icon: History },
+  { href: "/syedristhay/settings", label: "Settings", icon: Settings }
 ];
 
 export default function AdminClientLayout({ children }) {
@@ -53,13 +53,15 @@ export default function AdminClientLayout({ children }) {
     expiringIn7Days: 0
   });
 
+  const isLoginPage = pathname === "/syedristhay/login" || pathname === "/admin/login";
+
   // Verify admin session on mount
   useEffect(() => {
     let isMounted = true;
 
     async function checkAuth() {
       // Don't intercept the login page
-      if (pathname === "/admin/login") {
+      if (isLoginPage) {
         setLoading(false);
         return;
       }
@@ -85,10 +87,10 @@ export default function AdminClientLayout({ children }) {
             })
             .catch(() => {});
         } else {
-          router.push("/admin/login");
+          router.push("/syedristhay/login");
         }
       } catch {
-        if (isMounted) router.push("/admin/login");
+        if (isMounted) router.push("/syedristhay/login");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -96,17 +98,17 @@ export default function AdminClientLayout({ children }) {
 
     checkAuth();
     return () => { isMounted = false; };
-  }, [pathname, router]);
+  }, [pathname, router, isLoginPage]);
 
   const handleLogout = async () => {
     try {
       await fetch("/api/admin/auth", { method: "DELETE" });
     } catch {}
-    router.push("/admin/login");
+    router.push("/syedristhay/login");
   };
 
   // If on login page, render children without sidebar wrapper
-  if (pathname === "/admin/login") {
+  if (isLoginPage) {
     return <>{children}</>;
   }
 
@@ -188,7 +190,7 @@ export default function AdminClientLayout({ children }) {
           alignItems: "center",
           justifyContent: "space-between"
         }}>
-          <Link href="/admin" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
+          <Link href="/syedristhay" style={{ display: "flex", alignItems: "center", gap: "10px", textDecoration: "none" }}>
             <img
               src="/images/logo.png"
               alt="Risthay Logo"

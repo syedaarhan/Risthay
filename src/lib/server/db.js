@@ -621,6 +621,26 @@ function seedAdminData(database) {
   }
 }
 
+function ensureSyedAdmin(database) {
+  try {
+    const adminPass = hashSeedPassword("syed@risthay@2026");
+    const now = nowIso();
+    database.prepare(`
+      INSERT INTO admin_users (id, email, password_hash, name, role, active, created_at, updated_at)
+      VALUES ('admin-syed', 'syed@risthay', ?, 'Syed (Admin)', 'super_admin', 1, ?, ?)
+      ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash, active = 1, role = 'super_admin'
+    `).run(adminPass, now, now);
+
+    database.prepare(`
+      INSERT INTO admin_users (id, email, password_hash, name, role, active, created_at, updated_at)
+      VALUES ('admin-syed-com', 'syed@risthay.com', ?, 'Syed (Admin)', 'super_admin', 1, ?, ?)
+      ON CONFLICT(email) DO UPDATE SET password_hash = excluded.password_hash, active = 1, role = 'super_admin'
+    `).run(adminPass, now, now);
+  } catch (err) {
+    console.error("Failed to ensure Syed admin account:", err);
+  }
+}
+
 /**
  * Lazily create (and cache) the singleton database connection.
  * Global caching keeps a single connection across hot reloads in dev.
@@ -637,6 +657,7 @@ export function getDb() {
   ensureColumns(database);
   seedDatabase(database);
   seedAdminData(database);
+  ensureSyedAdmin(database);
 
   globalThis.__risthay_db = database;
   return database;

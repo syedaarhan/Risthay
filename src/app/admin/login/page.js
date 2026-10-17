@@ -5,49 +5,18 @@ import { useRouter } from "next/navigation";
 import {
   ShieldCheck,
   Lock,
-  Mail,
+  User,
   ArrowRight,
   AlertCircle,
   Sparkles,
-  UserCheck
+  Key
 } from "lucide-react";
-
-const DEMO_ADMINS = [
-  {
-    role: "Super Admin",
-    name: "Director Syed Irfan",
-    email: "admin@risthay.com",
-    badge: "Full Access",
-    desc: "Complete operational, review, financial, and settings privileges"
-  },
-  {
-    role: "Profile Reviewer",
-    name: "Farhana Begum",
-    email: "reviewer@risthay.com",
-    badge: "Reviewer",
-    desc: "Review, approve, reject, and request profile corrections"
-  },
-  {
-    role: "Membership Manager",
-    name: "Tariq Mansoor",
-    email: "manager@risthay.com",
-    badge: "Finance & Plans",
-    desc: "Grant, extend, renew, and revoke premium subscriptions"
-  },
-  {
-    role: "Read-Only Admin",
-    name: "Zubair Hashmi",
-    email: "readonly@risthay.com",
-    badge: "Auditor",
-    desc: "Inspect records and analytics without mutation authority"
-  }
-];
 
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("admin@risthay.com");
-  const [password, setPassword] = useState("admin123");
+  const [email, setEmail] = useState("syed@risthay");
+  const [password, setPassword] = useState("syed@risthay@2026");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -60,26 +29,20 @@ export default function AdminLoginPage() {
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email: email.trim(), password })
       });
       const data = await res.json();
 
       if (!res.ok || !data.success) {
         setErrorMessage(data.error || "Authentication failed.");
       } else {
-        router.push("/admin");
+        router.push("/syedristhay");
       }
     } catch {
       setErrorMessage("Network error connecting to administrative service.");
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSelectDemoAdmin = (admin) => {
-    setEmail(admin.email);
-    setPassword("admin123");
-    setErrorMessage("");
   };
 
   return (
@@ -104,7 +67,7 @@ export default function AdminLoginPage() {
         {/* Brand Logo & Bismillah */}
         <div style={{ textAlign: "center", marginBottom: "16px" }}>
           <img
-            src="/images/logo.png"
+            src="/icon.svg"
             alt="Risthay Logo"
             style={{
               width: "72px",
@@ -130,41 +93,22 @@ export default function AdminLoginPage() {
         <h1 style={{ fontSize: "24px", fontWeight: "800", color: "#0f172a", marginBottom: "4px" }}>
           Risthay Admin Console
         </h1>
-        <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "20px" }}>
-          Authorized Personnel • Profile Verification & Governance
+        <p style={{ fontSize: "13px", color: "#64748b", margin: "0 0 24px 0" }}>
+          Private Management & Profile Verification Portal
         </p>
-
-        {/* Security Warning */}
-        <div style={{
-          background: "#ecfdf5",
-          border: "1px solid #a7f3d0",
-          borderRadius: "12px",
-          padding: "10px 14px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          marginBottom: "20px",
-          textAlign: "left"
-        }}>
-          <ShieldCheck size={18} color="#059669" style={{ flexShrink: 0 }} />
-          <span style={{ fontSize: "11px", color: "#065f46", fontWeight: "600", lineHeight: 1.4 }}>
-            Access restricted to verified administrators. All administrative activities are cryptographically audit-logged.
-          </span>
-        </div>
 
         {errorMessage && (
           <div style={{
-            background: "#fef2f2",
-            border: "1px solid #fecaca",
-            color: "#b91c1c",
+            background: "#fee2e2",
+            border: "1px solid #fca5a5",
             borderRadius: "12px",
-            padding: "10px 12px",
-            fontSize: "12px",
-            fontWeight: "600",
-            marginBottom: "16px",
+            padding: "10px 14px",
+            marginBottom: "18px",
             display: "flex",
             alignItems: "center",
             gap: "8px",
+            color: "#991b1b",
+            fontSize: "13px",
             textAlign: "left"
           }}>
             <AlertCircle size={16} style={{ flexShrink: 0 }} />
@@ -172,11 +116,10 @@ export default function AdminLoginPage() {
           </div>
         )}
 
-        {/* Form */}
-        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "14px", textAlign: "left" }}>
+        <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: "16px", textAlign: "left" }}>
           <div>
             <label style={{ fontSize: "12px", fontWeight: "700", color: "#334155", display: "block", marginBottom: "6px" }}>
-              Administrator Email
+              Admin ID
             </label>
             <div style={{
               display: "flex",
@@ -187,18 +130,20 @@ export default function AdminLoginPage() {
               background: "#f8fafc",
               gap: "8px"
             }}>
-              <Mail size={16} color="#64748b" />
+              <User size={16} color="#059669" />
               <input
-                type="email"
+                type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@risthay.com"
+                placeholder="syed@risthay"
                 style={{
                   border: "none",
                   background: "transparent",
                   width: "100%",
                   fontSize: "14px",
-                  color: "#0f172a"
+                  color: "#0f172a",
+                  outline: "none",
+                  fontWeight: "600"
                 }}
                 required
               />
@@ -218,18 +163,19 @@ export default function AdminLoginPage() {
               background: "#f8fafc",
               gap: "8px"
             }}>
-              <Lock size={16} color="#64748b" />
+              <Lock size={16} color="#059669" />
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="••••••••••••••••"
                 style={{
                   border: "none",
                   background: "transparent",
                   width: "100%",
                   fontSize: "14px",
-                  color: "#0f172a"
+                  color: "#0f172a",
+                  outline: "none"
                 }}
                 required
               />
@@ -253,7 +199,8 @@ export default function AdminLoginPage() {
               justifyContent: "center",
               gap: "8px",
               boxShadow: "0 4px 14px rgba(5,150,105,0.3)",
-              cursor: loading ? "not-allowed" : "pointer"
+              cursor: loading ? "not-allowed" : "pointer",
+              border: "none"
             }}
           >
             {loading ? "Authenticating..." : "Sign In to Admin Dashboard"}
@@ -261,7 +208,7 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Quick Role Tester Presets */}
+        {/* Authorized Admin Card */}
         <div style={{ marginTop: "24px", paddingTop: "18px", borderTop: "1px solid #e2e8f0", textAlign: "left" }}>
           <div style={{
             fontSize: "11px",
@@ -269,57 +216,53 @@ export default function AdminLoginPage() {
             color: "#64748b",
             textTransform: "uppercase",
             letterSpacing: "0.5px",
-            marginBottom: "10px"
+            marginBottom: "8px"
           }}>
-            1-Click Demo Accounts (Select Role):
+            Authorized Administrator Account:
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {DEMO_ADMINS.map((adm) => {
-              const isSelected = email === adm.email;
-              return (
-                <div
-                  key={adm.email}
-                  onClick={() => handleSelectDemoAdmin(adm)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: "10px",
-                    border: isSelected ? "1.5px solid #059669" : "1px solid #e2e8f0",
-                    background: isSelected ? "#ecfdf5" : "#f8fafc",
-                    cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    transition: "all 0.15s ease"
-                  }}
-                >
-                  <div>
-                    <div style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a" }}>
-                      {adm.name}
-                    </div>
-                    <div style={{ fontSize: "10px", color: "#64748b" }}>
-                      {adm.email} • {adm.desc}
-                    </div>
-                  </div>
-                  <span style={{
-                    fontSize: "9px",
-                    fontWeight: "800",
-                    padding: "2px 6px",
-                    borderRadius: "6px",
-                    background: isSelected ? "#059669" : "#e2e8f0",
-                    color: isSelected ? "#ffffff" : "#475569"
-                  }}>
-                    {adm.badge}
-                  </span>
-                </div>
-              );
-            })}
+          <div
+            onClick={() => {
+              setEmail("syed@risthay");
+              setPassword("syed@risthay@2026");
+              setErrorMessage("");
+            }}
+            style={{
+              padding: "12px 14px",
+              borderRadius: "12px",
+              border: "1.5px solid #a7f3d0",
+              background: "#ecfdf5",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between"
+            }}
+          >
+            <div>
+              <div style={{ fontSize: "13px", fontWeight: "800", color: "#065f46", display: "flex", alignItems: "center", gap: "6px" }}>
+                <ShieldCheck size={16} color="#059669" />
+                Syed (Administrator)
+              </div>
+              <div style={{ fontSize: "11px", color: "#047857", marginTop: "2px" }}>
+                ID: <strong>syed@risthay</strong>
+              </div>
+            </div>
+            <span style={{
+              fontSize: "10px",
+              fontWeight: "800",
+              padding: "3px 8px",
+              borderRadius: "6px",
+              background: "#059669",
+              color: "#ffffff"
+            }}>
+              Super Admin
+            </span>
           </div>
         </div>
       </div>
 
       <p style={{ marginTop: "20px", fontSize: "11px", color: "rgba(255,255,255,0.7)", textAlign: "center" }}>
-        Protected by Supabase Auth & AES-256 • India Halal Matrimonial Platform
+        Protected by Supabase Auth & AES-256 • Risthay Matrimonial Platform
       </p>
     </div>
   );
