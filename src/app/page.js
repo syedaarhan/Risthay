@@ -496,6 +496,49 @@ export default function RisthayMatrimonyApp() {
           </div>
         </header>
 
+        {/* Profile Moderation & Review Status Banner */}
+        {currentUser && currentUser.reviewStatus && currentUser.reviewStatus !== "approved" && (
+          <div style={{
+            padding: "10px 16px",
+            background: currentUser.reviewStatus === "rejected"
+              ? "#fef2f2"
+              : currentUser.reviewStatus === "needs_correction"
+              ? "#fffbeb"
+              : "#ecfdf5",
+            borderBottom: `1px solid ${
+              currentUser.reviewStatus === "rejected"
+                ? "#fecaca"
+                : currentUser.reviewStatus === "needs_correction"
+                ? "#fde68a"
+                : "#a7f3d0"
+            }`,
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            fontSize: "12px",
+            lineHeight: "1.4"
+          }}>
+            {currentUser.reviewStatus === "rejected" ? (
+              <div style={{ color: "#dc2626", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                <span>🚫 Registration Rejected:</span>
+                <span style={{ color: "#7f1d1d", fontWeight: "500" }}>{currentUser.rejectionReason || "Identity guidelines not met"}</span>
+              </div>
+            ) : currentUser.reviewStatus === "needs_correction" ? (
+              <div style={{ color: "#b45309", fontWeight: "700", flex: 1 }}>
+                <span>⚠️ Correction Requested:</span>{" "}
+                <span style={{ color: "#78350f", fontWeight: "500" }}>{currentUser.correctionNotes || "Please review and clarify your profile information."}</span>
+              </div>
+            ) : (
+              <div style={{ color: "#065f46", display: "flex", alignItems: "center", gap: "8px" }}>
+                <ShieldCheck size={16} color="#059669" />
+                <span>
+                  <strong>Under Verification:</strong> Your profile is currently being reviewed by Halal Moderation. Matches can see you once approved.
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Mobile Main Body */}
         <main style={{ flex: 1, padding: currentTab === "messages" ? "0 0 70px 0" : "16px 16px 20px 16px" }}>
           {currentTab === "home" && (

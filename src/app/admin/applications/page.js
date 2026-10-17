@@ -77,6 +77,45 @@ export default function AdminApplicationsPage() {
     fetchProfiles();
   };
 
+  const handleQuickApprove = async (profileId, name) => {
+    if (!window.confirm(`Approve and publish profile ${name} (${profileId}) to live matrimony feed?`)) return;
+    try {
+      const res = await fetch(`/api/admin/profiles/${profileId}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "approve", notes: "Quick approved from applications queue" })
+      });
+      const data = await res.json();
+      if (data?.success) {
+        fetchProfiles();
+      } else {
+        alert(data?.error || "Failed to approve profile");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
+  const handleQuickReject = async (profileId, name) => {
+    const reason = window.prompt(`Enter rejection reason for candidate ${name} (${profileId}):`, "Incomplete or unverifiable identity information");
+    if (!reason || !reason.trim()) return;
+    try {
+      const res = await fetch(`/api/admin/profiles/${profileId}/decision`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "reject", reason: reason.trim() })
+      });
+      const data = await res.json();
+      if (data?.success) {
+        fetchProfiles();
+      } else {
+        alert(data?.error || "Failed to reject profile");
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case "approved":
@@ -348,23 +387,67 @@ export default function AdminApplicationsPage() {
 
                     {/* Action */}
                     <td style={{ padding: "0.85rem 1rem", textAlign: "right" }}>
-                      <Link
-                        href={`/syedristhay/profiles/${p.id}`}
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: "0.45rem 0.85rem",
-                          background: "#059669",
-                          color: "#ffffff",
-                          borderRadius: "6px",
-                          fontSize: "0.8rem",
-                          fontWeight: "700",
-                          textDecoration: "none"
-                        }}
-                      >
-                        Review <ChevronRight size={14} />
-                      </Link>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                        {p.review_status !== "approved" && (
+                          <button
+                            onClick={() => handleQuickApprove(p.id, p.name)}
+                            title="Quick Approve"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "6px",
+                              border: "1px solid #10b981",
+                              background: "#ecfdf5",
+                              color: "#059669",
+                              cursor: "pointer"
+                            }}
+                          >
+                            <CheckCircle2 size={15} />
+                          </button>
+                        )}
+
+                        {p.review_status !== "rejected" && (
+                          <button
+                            onClick={() => handleQuickReject(p.id, p.name)}
+                            title="Quick Reject"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              width: "28px",
+                              height: "28px",
+                              borderRadius: "6px",
+                              border: "1px solid #f87171",
+                              background: "#fef2f2",
+                              color: "#dc2626",
+                              cursor: "pointer"
+                            }}
+                          >
+                            <XCircle size={15} />
+                          </button>
+                        )}
+
+                        <Link
+                          href={`/syedristhay/profiles/${p.id}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "4px",
+                            padding: "0.45rem 0.85rem",
+                            background: "#059669",
+                            color: "#ffffff",
+                            borderRadius: "6px",
+                            fontSize: "0.8rem",
+                            fontWeight: "700",
+                            textDecoration: "none"
+                          }}
+                        >
+                          Review <ChevronRight size={14} />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))

@@ -53,7 +53,12 @@ function buildProfile(data, existing = {}) {
     avatar,
     role: existing.role || "member",
     onboarded: true,
-    activeStatus: existing.activeStatus || "Active Today"
+    activeStatus: existing.activeStatus || "Active Today",
+    reviewStatus: existing.reviewStatus === "needs_correction" ? "pending" : (existing.reviewStatus || "pending"),
+    identityStatus: data.aadhaarSkipped ? "pending" : "verified",
+    selfieStatus: data.selfieSkipped ? "needs_manual_review" : "verified",
+    registeredRelationship: sanitize(data.profileFor || data.registeredRelationship, 40) || existing.registeredRelationship || "Self",
+    status: "pending"
   };
 }
 

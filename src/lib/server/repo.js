@@ -68,7 +68,16 @@ export function rowToProfile(row) {
     isPremium: isPremiumActive(row),
     premiumPlan: row.premium_plan || null,
     premiumUntil: row.premium_until || null,
-    supabaseUserId: row.supabase_user_id || null
+    supabaseUserId: row.supabase_user_id || null,
+    reviewStatus: row.review_status || "pending",
+    identityStatus: row.identity_status || "pending",
+    selfieStatus: row.selfie_status || "verified",
+    rejectionReason: row.rejection_reason || null,
+    correctionNotes: row.correction_notes || null,
+    reviewedBy: row.reviewed_by || null,
+    reviewedAt: row.reviewed_at || null,
+    registeredRelationship: row.registered_relationship || "Self",
+    status: row.status || "active"
   };
 }
 
@@ -118,12 +127,19 @@ export function createUser(profile) {
   const id = profile.id || newId("RS");
   const supabaseUserId = profile.supabaseUserId || null;
 
+  const reviewStatus = profile.reviewStatus || (profile.isDemo ? "approved" : "pending");
+  const identityStatus = profile.identityStatus || (profile.verified ? "verified" : "pending");
+  const selfieStatus = profile.selfieStatus || "verified";
+  const registeredRelationship = profile.registeredRelationship || profile.profileFor || "Self";
+  const userStatus = profile.status || (reviewStatus === "approved" ? "active" : "pending");
+
   db.prepare(`
     INSERT INTO users (
       id, phone, email, password_hash, name, age, dob, gender, city, state, country,
       profession, education, religious_practice, marital_status, verified, avatar,
-      role, is_demo, onboarded, status, profile_json, created_at, updated_at, supabase_user_id
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, 'active', ?, ?, ?, ?)
+      role, is_demo, onboarded, status, profile_json, created_at, updated_at, supabase_user_id,
+      review_status, identity_status, selfie_status, registered_relationship
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     id,
     profile.phone || null,
@@ -144,11 +160,33 @@ export function createUser(profile) {
     profile.avatar || null,
     profile.role || "member",
     profile.onboarded === false ? 0 : 1,
-    JSON.stringify({ ...profile, id, supabaseUserId }),
+    userStatus,
+    JSON.stringify({ ...profile, id, supabaseUserId, reviewStatus, identityStatus, selfieStatus, registeredRelationship }),
     timestamp,
     timestamp,
-    supabaseUserId
+    supabaseUserId,
+    reviewStatus,
+    identityStatus,
+    selfieStatus,
+    registeredRelationship
   );
+
+  // Notify admin queue about new submission
+  try {
+    db.prepare(`
+      INSERT INTO admin_notifications (id, profile_id, user_id, type, channel, recipient, title, message, status, created_at)
+      VALUES (?, ?, ?, 'profile_submitted', 'in_app', 'admin', ?, ?, 'delivered', ?)
+    `).run(
+      crypto.randomUUID(),
+      id,
+      id,
+      "New Profile Submitted for Approval",
+      `${profile.name || "A candidate"} (${id}) has completed registration and is awaiting admin review.`,
+      timestamp
+    );
+  } catch {
+    // Ignore notification errors
+  }
 
   ensureSettingsRow(id);
   return getUserById(id);
@@ -163,12 +201,23 @@ export function updateUser(id, patch = {}) {
   const timestamp = nowIso();
   const supabaseUserId = patch.supabaseUserId !== undefined ? patch.supabaseUserId : (existing.supabase_user_id || null);
 
+  // If candidate was in needs_correction and is saving changes, put back in pending review
+  let reviewStatus = patch.reviewStatus !== undefined ? patch.reviewStatus : (existing.review_status || "pending");
+  if (existing.review_status === "needs_correction" && (patch.resubmitted || patch.reviewStatus === undefined)) {
+    reviewStatus = "pending";
+  }
+  const identityStatus = patch.identityStatus !== undefined ? patch.identityStatus : (existing.identity_status || "pending");
+  const selfieStatus = patch.selfieStatus !== undefined ? patch.selfieStatus : (existing.selfie_status || "verified");
+  const registeredRelationship = patch.registeredRelationship !== undefined ? patch.registeredRelationship : (existing.registered_relationship || "Self");
+  const status = patch.status !== undefined ? patch.status : (existing.status || "active");
+
   db.prepare(`
     UPDATE users SET
       phone = ?, email = ?, name = ?, age = ?, dob = ?, gender = ?, city = ?,
       state = ?, country = ?, profession = ?, education = ?, religious_practice = ?,
-      marital_status = ?, verified = ?, avatar = ?, onboarded = ?, profile_json = ?,
-      updated_at = ?, supabase_user_id = ?
+      marital_status = ?, verified = ?, avatar = ?, onboarded = ?, status = ?,
+      profile_json = ?, updated_at = ?, supabase_user_id = ?,
+      review_status = ?, identity_status = ?, selfie_status = ?, registered_relationship = ?
     WHERE id = ?
   `).run(
     merged.phone ?? existing.phone ?? null,
@@ -187,9 +236,14 @@ export function updateUser(id, patch = {}) {
     merged.verified === false ? 0 : 1,
     merged.avatar ?? existing.avatar ?? null,
     merged.onboarded === false ? 0 : 1,
+    status,
     JSON.stringify(merged),
     timestamp,
     supabaseUserId,
+    reviewStatus,
+    identityStatus,
+    selfieStatus,
+    registeredRelationship,
     id
   );
 
@@ -222,10 +276,16 @@ export function deleteUser(id) {
 /* Profiles                                                            */
 /* ------------------------------------------------------------------ */
 
-export function listProfiles({ excludeId = null, state = null, search = null, gender = null, page = 1, limit = 50 } = {}) {
+export function listProfiles({ excludeId = null, state = null, search = null, gender = null, page = 1, limit = 50, includeUnapproved = false } = {}) {
   const db = getDb();
   const clauses = ["role != 'support'"];
   const args = [];
+
+  // Public match browsing only displays approved, active profiles!
+  if (!includeUnapproved) {
+    clauses.push("review_status = 'approved'");
+    clauses.push("status = 'active'");
+  }
 
   if (excludeId) {
     clauses.push("id != ?");

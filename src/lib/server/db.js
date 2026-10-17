@@ -68,10 +68,20 @@ function createSchema(database) {
       role              TEXT DEFAULT 'member',
       is_demo           INTEGER DEFAULT 0,
       onboarded         INTEGER DEFAULT 0,
-      status            TEXT DEFAULT 'active',
+      status            TEXT DEFAULT 'pending',
+      review_status     TEXT DEFAULT 'pending',
+      identity_status   TEXT DEFAULT 'pending',
+      selfie_status     TEXT DEFAULT 'needs_manual_review',
+      registered_relationship TEXT DEFAULT 'Self',
+      reviewed_by       TEXT,
+      reviewed_at       TEXT,
+      rejection_reason  TEXT,
+      correction_notes  TEXT,
+      internal_notes    TEXT,
       is_premium        INTEGER DEFAULT 0,
       premium_plan      TEXT,
       premium_until     TEXT,
+      supabase_user_id  TEXT,
       profile_json      TEXT NOT NULL DEFAULT '{}',
       created_at        TEXT NOT NULL,
       updated_at        TEXT NOT NULL
@@ -341,8 +351,9 @@ function insertUser(database, profile, { phone = null, passwordHash = null, demo
     INSERT INTO users (
       id, phone, email, password_hash, name, age, dob, gender, city, state, country,
       profession, education, religious_practice, marital_status, verified, avatar,
-      role, is_demo, onboarded, status, profile_json, created_at, updated_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      role, is_demo, onboarded, status, profile_json, created_at, updated_at,
+      review_status, identity_status, selfie_status, registered_relationship
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   stmt.run(
@@ -369,7 +380,11 @@ function insertUser(database, profile, { phone = null, passwordHash = null, demo
     profile.status || "active",
     JSON.stringify(profile),
     nowIso(),
-    nowIso()
+    nowIso(),
+    profile.reviewStatus || "approved",
+    profile.identityStatus || (profile.verified ? "verified" : "pending"),
+    profile.selfieStatus || "verified",
+    profile.registeredRelationship || "Self"
   );
 }
 
