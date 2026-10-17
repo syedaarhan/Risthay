@@ -363,24 +363,6 @@ export default function RisthayMatrimonyApp() {
           triggerToast("Mabrook! Welcome to Risthay, " + (profile.name || "Member") + "! 🎉");
           hydrateFromBackend();
         }}
-        onDirectLogin={() => {
-          // Quick 1-tap demo login for testers / evaluators
-          const demoUser = {
-            id: "user-default",
-            name: "Ahmed Raza",
-            age: 28,
-            profession: "Principal Architect",
-            city: "Hyderabad",
-            state: "Telangana",
-            verified: true,
-            avatar: "/images/ahmed.jpg"
-          };
-          setIsLoggedIn(true);
-          setCurrentUser(demoUser);
-          setCurrentTab("home");
-          triggerToast("Welcome back, Ahmed Raza! (Demo Login)");
-          hydrateFromBackend();
-        }}
       />
     );
   }

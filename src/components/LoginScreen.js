@@ -369,23 +369,7 @@ export default function LoginScreen({ onLoginSuccess, onStartOnboarding }) {
           <span>New to Risthay? Create Halal Profile</span>
         </button>
 
-        {/* Fast 1-Tap Demo Access */}
-        <button
-          onClick={handleQuickDemoLogin}
-          style={{
-            background: "transparent",
-            color: "var(--text-muted)",
-            fontSize: "12px",
-            fontWeight: "600",
-            padding: "6px",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "5px"
-          }}
-        >
-          <UserCheck size={14} />
-          <span>Quick 1-Tap Demo Login (Ahmed Raza)</span>
-        </button>
+
       </div>
 
       <p style={{ marginTop: "24px", fontSize: "11px", color: "var(--text-muted)", textAlign: "center" }}>

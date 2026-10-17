@@ -219,7 +219,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
   const [formData, setFormData] = useState({
     // Page 1: Auth Info (Google Only)
     authProvider: "google",
-    email: "syed.rehan@example.com",
+    email: initialUser?.email || "",
 
     // Page 2: Who Are You Creating This Profile For?
     profileFor: "Myself", // Myself, My Son, My Daughter, My Brother, My Sister, My Relative, Someone Else
@@ -1016,34 +1016,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
               </button>
             </div>
 
-            {/* Quick Demo Login Bypass for Evaluators & Testers */}
-            {onDirectLogin && (
-              <button
-                type="button"
-                onClick={onDirectLogin}
-                style={{
-                  width: "100%",
-                  padding: "13px 16px",
-                  borderRadius: "16px",
-                  border: "1.5px dashed #059669",
-                  background: "#f0fdf4",
-                  color: "#047857",
-                  fontSize: "13px",
-                  fontWeight: "700",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  cursor: "pointer",
-                  marginBottom: "20px",
-                  transition: "all 0.2s ease"
-                }}
-                className="hover-lift"
-              >
-                <Sparkles size={16} color="#059669" />
-                <span>Quick Demo Login (Skip to Dashboard)</span>
-              </button>
-            )}
+
 
             {/* India Residency Requirement Notice */}
             <div style={{
@@ -3461,46 +3434,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
             </button>
 
             {/* Quick Demo Login Option for Local Evaluators */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              margin: "12px 0",
-              color: "#94a3b8",
-              fontSize: "11px"
-            }}>
-              <span style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-              <span>OR OFFLINE DEMO</span>
-              <span style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setActiveModal(null);
-                if (onDirectLogin) {
-                  onDirectLogin();
-                }
-              }}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "12px",
-                border: "1px dashed #cbd5e1",
-                background: "#f8fafc",
-                color: "#475569",
-                fontSize: "12px",
-                fontWeight: "600",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                cursor: "pointer"
-              }}
-            >
-              <UserCheck size={14} />
-              <span>Quick 1-Tap Demo Login (Ahmed Raza)</span>
-            </button>
           </div>
         </div>
       )}
