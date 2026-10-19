@@ -83,55 +83,107 @@ export function verifyAdminPassword(password, stored) {
   return crypto.timingSafeEqual(expected, derived);
 }
 
+const ADMIN_JWT_SECRET = process.env.ADMIN_JWT_SECRET || process.env.NEXTAUTH_SECRET || "risthay-admin-secure-key-2026-bismillah";
+
+function signAdminToken(payload) {
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", ADMIN_JWT_SECRET).update(data).digest("base64url");
+  return `${data}.${sig}`;
+}
+
+function verifyAdminToken(token) {
+  if (!token || typeof token !== "string" || !token.includes(".")) return null;
+  const [data, sig] = token.split(".");
+  if (!data || !sig) return null;
+  try {
+    const expectedSig = crypto.createHmac("sha256", ADMIN_JWT_SECRET).update(data).digest("base64url");
+    if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expectedSig))) return null;
+
+    const payload = JSON.parse(Buffer.from(data, "base64url").toString("utf8"));
+    if (payload.exp && Date.now() > payload.exp) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export function createAdminSession(adminUser, { userAgent = null, ip = null } = {}) {
-  const db = getDb();
-  const token = crypto.randomBytes(32).toString("hex");
-  const createdAt = new Date().toISOString();
-  const expiresAt = new Date(Date.now() + SESSION_TTL_MS).toISOString();
+  const exp = Date.now() + SESSION_TTL_MS;
+  const payload = {
+    id: adminUser.id,
+    email: adminUser.email,
+    name: adminUser.name,
+    role: adminUser.role,
+    exp,
+    iat: Date.now()
+  };
+  const token = signAdminToken(payload);
+  const createdAtIso = new Date().toISOString();
+  const expiresAtIso = new Date(exp).toISOString();
 
-  db.prepare(`
-    INSERT INTO admin_sessions (token, admin_id, email, role, created_at, expires_at, user_agent, ip)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(token, adminUser.id, adminUser.email, adminUser.role, createdAt, expiresAt, userAgent, ip);
+  // Best effort write to local database
+  try {
+    const db = getDb();
+    db.prepare(`
+      INSERT OR REPLACE INTO admin_sessions (token, admin_id, email, role, created_at, expires_at, user_agent, ip)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(token, adminUser.id, adminUser.email, adminUser.role, createdAtIso, expiresAtIso, userAgent, ip);
+    db.prepare("UPDATE admin_users SET last_login_at = ? WHERE id = ?").run(createdAtIso, adminUser.id);
+  } catch {
+    // Stateless token is verified without DB
+  }
 
-  // Update last login timestamp
-  db.prepare("UPDATE admin_users SET last_login_at = ? WHERE id = ?").run(createdAt, adminUser.id);
-
-  return { token, expiresAt };
+  return { token, expiresAt: expiresAtIso };
 }
 
 export function getAdminSession(request) {
   const token = request?.cookies?.get?.(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const db = getDb();
-  const row = db.prepare(`
-    SELECT s.token, s.admin_id, s.email, s.role, s.expires_at,
-           u.name, u.active
-    FROM admin_sessions s
-    JOIN admin_users u ON s.admin_id = u.id
-    WHERE s.token = ?
-  `).get(token);
-
-  if (!row || !row.active) return null;
-
-  if (new Date(row.expires_at).getTime() < Date.now()) {
-    deleteAdminSession(token);
-    return null;
+  // 1. Verify stateless cryptographic token (works 100% across all serverless containers)
+  const payload = verifyAdminToken(token);
+  if (payload) {
+    return {
+      id: payload.id,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+      permissions: ADMIN_PERMISSIONS[payload.role] || []
+    };
   }
 
-  return {
-    id: row.admin_id,
-    email: row.email,
-    name: row.name,
-    role: row.role,
-    permissions: ADMIN_PERMISSIONS[row.role] || []
-  };
+  // 2. Fallback to database lookup for legacy tokens
+  try {
+    const db = getDb();
+    const row = db.prepare(`
+      SELECT s.token, s.admin_id, s.email, s.role, s.expires_at,
+             u.name, u.active
+      FROM admin_sessions s
+      JOIN admin_users u ON s.admin_id = u.id
+      WHERE s.token = ?
+    `).get(token);
+
+    if (row && row.active && new Date(row.expires_at).getTime() > Date.now()) {
+      return {
+        id: row.admin_id,
+        email: row.email,
+        name: row.name,
+        role: row.role,
+        permissions: ADMIN_PERMISSIONS[row.role] || []
+      };
+    }
+  } catch {
+    // Ignore DB errors
+  }
+
+  return null;
 }
 
 export function deleteAdminSession(token) {
   if (!token) return;
-  getDb().prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
+  try {
+    getDb().prepare("DELETE FROM admin_sessions WHERE token = ?").run(token);
+  } catch {}
 }
 
 export function adminCookieOptions() {

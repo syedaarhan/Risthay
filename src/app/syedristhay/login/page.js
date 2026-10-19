@@ -36,7 +36,7 @@ export default function AdminLoginPage() {
       if (!res.ok || !data.success) {
         setErrorMessage(data.error || "Authentication failed.");
       } else {
-        router.push("/syedristhay");
+        window.location.href = "/syedristhay";
       }
     } catch {
       setErrorMessage("Network error connecting to administrative service.");

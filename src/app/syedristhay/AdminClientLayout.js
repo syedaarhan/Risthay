@@ -53,7 +53,10 @@ export default function AdminClientLayout({ children }) {
     expiringIn7Days: 0
   });
 
-  const isLoginPage = pathname === "/syedristhay/login" || pathname === "/admin/login";
+  const isLoginPage = Boolean(
+    pathname?.startsWith("/syedristhay/login") ||
+    pathname?.startsWith("/admin/login")
+  );
 
   // Verify admin session on mount
   useEffect(() => {
@@ -87,10 +90,10 @@ export default function AdminClientLayout({ children }) {
             })
             .catch(() => {});
         } else {
-          router.push("/syedristhay/login");
+          router.replace("/syedristhay/login");
         }
       } catch {
-        if (isMounted) router.push("/syedristhay/login");
+        if (isMounted) router.replace("/syedristhay/login");
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -104,7 +107,7 @@ export default function AdminClientLayout({ children }) {
     try {
       await fetch("/api/admin/auth", { method: "DELETE" });
     } catch {}
-    router.push("/syedristhay/login");
+    window.location.href = "/syedristhay/login";
   };
 
   // If on login page, render children without sidebar wrapper
