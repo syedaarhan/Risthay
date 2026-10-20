@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect } from "react";
 import CompleteOnboardingFlow from "@/components/CompleteOnboardingFlow";
@@ -42,6 +42,19 @@ export default function RisthayMatrimonyApp() {
 
   // Active Tab
   const [currentTab, setCurrentTab] = useState("home"); // 'home' | 'browse' | 'interests' | 'messages' | 'myProfile'
+
+  // Feature flags
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
+  useEffect(() => {
+    fetch("/api/settings/features")
+      .then(r => r.json())
+      .then(data => {
+        if (data?.settings?.subscriptionsEnabled !== undefined) {
+          setSubscriptionsEnabled(data.settings.subscriptionsEnabled);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Data State
   const [profiles, setProfiles] = useState(PROFILES_DATA);
@@ -148,7 +161,7 @@ export default function RisthayMatrimonyApp() {
       triggerToast("Removed from Saved");
     } else {
       setShortlistedIds([...shortlistedIds, profileId]);
-      triggerToast("Profile Saved ❤️");
+      triggerToast("Profile Saved â¤ï¸");
     }
   };
 
@@ -169,10 +182,10 @@ export default function RisthayMatrimonyApp() {
       const data = await res.json();
       if (data.success && data.item) {
         setSentInterests([data.item, ...sentInterests]);
-        triggerToast(`Salaam sent to ${profile.name}! ✨`);
+        triggerToast(`Salaam sent to ${profile.name}! âœ¨`);
       }
     } catch {
-      triggerToast(`Salaam sent to ${profile.name}! ✨`);
+      triggerToast(`Salaam sent to ${profile.name}! âœ¨`);
     }
   };
 
@@ -342,13 +355,13 @@ export default function RisthayMatrimonyApp() {
           premiumUntil: data.subscription?.premiumUntil
         } : prev);
         await hydrateFromBackend();
-        triggerToast(`🎉 Premium Active! Welcome to Risthay Premium — ${plan?.duration}`);
+        triggerToast(`ðŸŽ‰ Premium Active! Welcome to Risthay Premium â€” ${plan?.duration}`);
         return;
       }
     } catch {}
     // Fallback: optimistic activation so the UX never dead-ends offline.
     setIsPremium(true);
-    triggerToast(`🎉 Premium Active! Welcome to Risthay Premium — ${plan?.duration}`);
+    triggerToast(`ðŸŽ‰ Premium Active! Welcome to Risthay Premium â€” ${plan?.duration}`);
   };
 
   // 1. IF NOT LOGGED IN: Show the new 15-page Complete Onboarding Flow
@@ -360,7 +373,7 @@ export default function RisthayMatrimonyApp() {
           setIsLoggedIn(true);
           setCurrentUser(profile);
           setCurrentTab("home");
-          triggerToast("Mabrook! Welcome to Risthay, " + (profile.name || "Member") + "! 🎉");
+          triggerToast("Mabrook! Welcome to Risthay, " + (profile.name || "Member") + "! ðŸŽ‰");
           hydrateFromBackend();
         }}
       />
@@ -502,12 +515,12 @@ export default function RisthayMatrimonyApp() {
           }}>
             {currentUser.reviewStatus === "rejected" ? (
               <div style={{ color: "#dc2626", fontWeight: "700", display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                <span>🚫 Registration Rejected:</span>
+                <span>ðŸš« Registration Rejected:</span>
                 <span style={{ color: "#7f1d1d", fontWeight: "500" }}>{currentUser.rejectionReason || "Identity guidelines not met"}</span>
               </div>
             ) : currentUser.reviewStatus === "needs_correction" ? (
               <div style={{ color: "#b45309", fontWeight: "700", flex: 1 }}>
-                <span>⚠️ Correction Requested:</span>{" "}
+                <span>âš ï¸ Correction Requested:</span>{" "}
                 <span style={{ color: "#78350f", fontWeight: "500" }}>{currentUser.correctionNotes || "Please review and clarify your profile information."}</span>
               </div>
             ) : (
@@ -535,7 +548,7 @@ export default function RisthayMatrimonyApp() {
               }}
               setCurrentTab={setCurrentTab}
               isPremium={isPremium}
-              onUpgradeToPremium={() => setIsSubscriptionOpen(true)}
+              onUpgradeToPremium={() => { if (subscriptionsEnabled) setIsSubscriptionOpen(true); }}
               stats={{
                 views: 12,
                 shortlisted: shortlistedIds.length,
@@ -555,7 +568,7 @@ export default function RisthayMatrimonyApp() {
               globalPhotoBlur={globalPhotoBlur}
               onToggleGlobalPhotoBlur={() => setGlobalPhotoBlur(!globalPhotoBlur)}
               isPremium={isPremium}
-              onUpgradeToPremium={() => setIsSubscriptionOpen(true)}
+              onUpgradeToPremium={() => { if (subscriptionsEnabled) setIsSubscriptionOpen(true); }}
             />
           )}
 
@@ -574,7 +587,7 @@ export default function RisthayMatrimonyApp() {
                 setCurrentTab("messages");
               }}
               isPremium={isPremium}
-              onUpgradeToPremium={() => setIsSubscriptionOpen(true)}
+              onUpgradeToPremium={() => { if (subscriptionsEnabled) setIsSubscriptionOpen(true); }}
             />
           )}
 
@@ -586,7 +599,7 @@ export default function RisthayMatrimonyApp() {
               onSendMessage={handleSendMessage}
               onViewProfile={(p) => setSelectedProfileForDetails(p)}
               isPremium={isPremium}
-              onUpgradeToPremium={() => setIsSubscriptionOpen(true)}
+              onUpgradeToPremium={() => { if (subscriptionsEnabled) setIsSubscriptionOpen(true); }}
             />
           )}
 
@@ -630,7 +643,7 @@ export default function RisthayMatrimonyApp() {
           onConfirmDeclineInterest={handleConfirmDeclineInterest}
           onStartChatFromMatch={handleStartChatFromMatch}
           isPremium={isPremium}
-          onUpgradeToPremium={() => setIsSubscriptionOpen(true)}
+          onUpgradeToPremium={() => { if (subscriptionsEnabled) setIsSubscriptionOpen(true); }}
         />
 
         {selectedProfileForDetails && (
@@ -642,12 +655,12 @@ export default function RisthayMatrimonyApp() {
             onToggleShortlist={handleToggleShortlist}
             globalPhotoBlur={globalPhotoBlur}
             isPremium={isPremium}
-            onUpgradeToPremium={() => setIsSubscriptionOpen(true)}
+            onUpgradeToPremium={() => { if (subscriptionsEnabled) setIsSubscriptionOpen(true); }}
           />
         )}
 
         {/* Premium Subscription Page */}
-        {isSubscriptionOpen && (
+        {isSubscriptionOpen && subscriptionsEnabled && (
           <SubscriptionPage
             onClose={() => setIsSubscriptionOpen(false)}
             onSubscribe={handleSubscribe}
@@ -667,7 +680,7 @@ export default function RisthayMatrimonyApp() {
               onComplete={(updated) => {
                 setCurrentUser(prev => ({ ...prev, ...updated }));
                 setIsEditingProfile(false);
-                triggerToast("Profile updated successfully! ✨");
+                triggerToast("Profile updated successfully! âœ¨");
               }}
               onCancel={() => setIsEditingProfile(false)}
             />
@@ -705,3 +718,18 @@ export default function RisthayMatrimonyApp() {
     </div>
   );
 }
+
+  // Check feature flags
+  const [subscriptionsEnabled, setSubscriptionsEnabled] = useState(true);
+  useEffect(() => {
+    fetch("/api/settings/features")
+      .then(r => r.json())
+      .then(data => {
+        if (data?.settings?.subscriptionsEnabled !== undefined) {
+          setSubscriptionsEnabled(data.settings.subscriptionsEnabled);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+

@@ -1006,3 +1006,45 @@ export default function AdminSubscriptionsPage() {
     </div>
   );
 }
+
+      <div style={{ marginTop: "1rem", background: "#fff7ed", border: "1px solid #fdba74", borderRadius: "12px", padding: "1rem 1.25rem", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: "0.75rem" }}>
+        <div>
+          <div style={{ fontWeight: "800", color: "#9a3412", display: "flex", alignItems: "center", gap: "8px" }}>
+            <ShieldAlert size={18} /> Website Subscriptions Control
+          </div>
+          <div style={{ fontSize: "0.85rem", color: "#7c2d12", marginTop: "4px" }}>
+            Disable subscriptions on the public website (keeps chat functionality accessible unless disabled separately).
+          </div>
+        </div>
+        <button
+          onClick={async () => {
+            try {
+              const res = await fetch("/api/admin/settings", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ subscriptionsEnabled: false })
+              });
+              const data = await res.json();
+              if (data?.success) {
+                showToast("Subscriptions disabled on website");
+              } else {
+                showToast("Failed to update settings");
+              }
+            } catch (e) {
+              showToast("Failed to update settings");
+            }
+          }}
+          style={{
+            padding: "0.6rem 1rem",
+            background: "#dc2626",
+            color: "#ffffff",
+            borderRadius: "8px",
+            fontWeight: "700",
+            border: "none",
+            cursor: "pointer"
+          }}
+        >
+          Disable Subscriptions on Website
+        </button>
+      </div>
+
