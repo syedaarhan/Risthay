@@ -163,7 +163,6 @@ const PRESET_PHOTOS = [
 const MARITAL_STATUS_EXPLANATIONS = {
   "Never Married": "Single and seeking first marriage according to the Sunnah.",
   "Divorced": "Legally and Islamically divorced with completed Talaq and Iddah period.",
-  "Separated": "Living apart; legal or formal dissolution process is currently in progress.",
   "Widowed": "Spouse has passed away (May Allah have mercy on them).",
   "Khula": "Dissolution of marriage initiated and granted to the wife through Islamic Shariah procedure."
 };
@@ -205,7 +204,7 @@ const HEIGHT_OPTIONS = [
 ];
 
 export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectLogin, initialUser }) {
-  // Current active step (1 to 15)
+  // Current active step (1 to 16)
   const [currentPage, setCurrentPage] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState("");
@@ -252,42 +251,50 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
 
     // Page 8: Marital Status
     maritalStatus: "", // Mandatory
-    hasChildren: "No",
+
+    // Page 9: Previous Marriage Details (only for Divorced / Widowed / Khula)
+    prevMarriageDurationValue: "",
+    prevMarriageDurationUnit: "Years",
+    childrenMaleCount: "0",
+    childrenFemaleCount: "0",
+    childrenMaleAges: "",
+    childrenFemaleAges: "",
+    childrenLivingWith: "",
 
     // Page 9: Education & Profession
     highestQualification: "", // Mandatory
     employmentSector: "", // Mandatory
     profession: "", // Mandatory
 
-    // Page 10: Monthly Income
+    // Page 11: Monthly Income
     incomeOption: "", // Mandatory ('slider' | 'below_10000' | 'prefer_not_to_say')
     monthlyIncome: 50000,
 
-    // Page 11: Profile Gallery
+    // Page 12: Profile Gallery
     photos: [], // Mandatory: at least 1 photo
     primaryPhotoIndex: 0,
     photoPrivacy: "show", // 'show' | 'hide'
     socialMediaPlatform: "Instagram",
     socialMediaLink: "",
 
-    // Page 12: About You
+    // Page 13: About You
     aboutMe: "", // Mandatory
     hobbies: [],
     partnerLookingFor: "",
     partnerAgeMin: "", // Mandatory
     partnerAgeMax: "", // Mandatory
 
-    // Page 13: Aadhaar Verification (Front Side Only)
+    // Page 14: Aadhaar Verification (Front Side Only)
     aadhaarFront: null, // Mandatory
     aadhaarConsent: false, // Mandatory
     aadhaarSkipped: false,
 
-    // Page 14: Live Selfie Verification
+    // Page 15: Live Selfie Verification
     liveSelfieUrl: null,
     selfieVerified: false, // Mandatory
     selfieStep: "ready", // 'ready' | 'streaming' | 'capturing' | 'analyzing' | 'verified' | 'fallback'
 
-    // Page 15: Review Status
+    // Page 16: Review Status
     reviewStatus: "pending"
   });
 
@@ -360,7 +367,11 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
   const [mounted, setMounted] = useState(false);
   useEffect(() => { setMounted(true); }, []);
   const calculatedAge = (mounted && isDobComplete) ? computeAge(formattedDob) : 0;
-  const isUnderage = mounted && isDobComplete && calculatedAge < 21;
+  const minAge = formData.gender === "Female" ? 18 : 21;
+  const isUnderage = mounted && isDobComplete && calculatedAge < minAge;
+
+  // Whether the previous-marriage page (page 9) should be shown
+  const needsPreviousMarriagePage = ["Divorced", "Widowed", "Khula"].includes(formData.maritalStatus);
 
   // Camera stream ref for Live Selfie
   const videoRef = useRef(null);
@@ -436,14 +447,15 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
       }
     }
 
-    // Step 4: Age Validation - Day, Month, Year & minimum 21 years (have to enter)
+    // Step 4: Age Validation - Day, Month, Year & gender-based minimum age
     if (currentPage === 4) {
       if (!formData.dobDay || !formData.dobMonth || !formData.dobYear) {
         setValidationError("Please select your complete Date of Birth (Day, Month, and Year).");
         return;
       }
       if (isUnderage) {
-        setValidationError(`You must be at least 21 years old to create a profile on Risthay. Your current calculated age is ${calculatedAge} years.`);
+        const genderLabel = formData.gender === "Female" ? "Female" : "Male";
+        setValidationError(`${genderLabel} applicants must be at least ${minAge} years old to register on Risthay. Your calculated age is ${calculatedAge} years.`);
         return;
       }
     }
@@ -480,16 +492,35 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
       }
     }
 
-    // Step 8: Marital Status Validation (have to enter)
+    // Step 8: Marital Status Validation
     if (currentPage === 8) {
       if (!formData.maritalStatus) {
         setValidationError("Please select your marital status.");
         return;
       }
+      // Skip page 9 (previous marriage) for Never Married
+      if (formData.maritalStatus === "Never Married") {
+        setCurrentPage(10);
+        return;
+      }
     }
 
-    // Step 9: Education and Career Validation (have to enter)
+    // Step 9: Previous Marriage Details (only for Divorced / Widowed / Khula)
     if (currentPage === 9) {
+      if (!formData.prevMarriageDurationValue?.trim()) {
+        setValidationError("Please enter the approximate duration of your previous marriage.");
+        return;
+      }
+      const hasMaleKids = parseInt(formData.childrenMaleCount || "0") > 0;
+      const hasFemaleKids = parseInt(formData.childrenFemaleCount || "0") > 0;
+      if ((hasMaleKids || hasFemaleKids) && !formData.childrenLivingWith) {
+        setValidationError("Please select where your children are currently living.");
+        return;
+      }
+    }
+
+    // Step 10: Education and Career Validation
+    if (currentPage === 10) {
       if (!formData.highestQualification) {
         setValidationError("Please select your Highest Education Qualification.");
         return;
@@ -504,8 +535,8 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
       }
     }
 
-    // Step 10: Monthly Income Validation (have to enter)
-    if (currentPage === 10) {
+    // Step 11: Monthly Income Validation
+    if (currentPage === 11) {
       if (!formData.incomeOption) {
         setValidationError("Please select your monthly income range or privacy preference.");
         return;
@@ -516,16 +547,16 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
       }
     }
 
-    // Step 11: Profile Gallery Photos Validation (have to enter)
-    if (currentPage === 11) {
+    // Step 12: Profile Gallery Photos Validation
+    if (currentPage === 12) {
       if (!formData.photos || formData.photos.length === 0) {
         setValidationError("Please upload or add at least one profile photo to proceed.");
         return;
       }
     }
 
-    // Step 12: About Me & Preferred Partner Age Range Validation (have to enter)
-    if (currentPage === 12) {
+    // Step 13: About Me & Partner Age Range Validation
+    if (currentPage === 13) {
       if (!formData.aboutMe?.trim()) {
         setValidationError("Please write a short introduction in the 'About Me' section.");
         return;
@@ -540,8 +571,8 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
       }
     }
 
-    // Step 13: Aadhaar Verification Validation (have to enter)
-    if (currentPage === 13) {
+    // Step 14: Aadhaar Verification Validation
+    if (currentPage === 14) {
       if (!formData.aadhaarFront) {
         setValidationError("Please upload your Aadhaar Card (Front Side) to proceed.");
         return;
@@ -552,15 +583,15 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
       }
     }
 
-    // Step 14: Live Selfie Verification Validation (have to enter)
-    if (currentPage === 14) {
+    // Step 15: Live Selfie Verification Validation
+    if (currentPage === 15) {
       if (!formData.selfieVerified || formData.selfieStep !== "verified") {
         setValidationError("Please complete your live selfie verification or fallback check to continue.");
         return;
       }
     }
 
-    if (currentPage < 15) {
+    if (currentPage < 16) {
       setCurrentPage(currentPage + 1);
     }
   };
@@ -568,6 +599,11 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
   const handlePrevPage = () => {
     setValidationError("");
     if (currentPage > 1) {
+      // Skip page 9 (previous marriage) when going back if Never Married
+      if (currentPage === 10 && formData.maritalStatus === "Never Married") {
+        setCurrentPage(8);
+        return;
+      }
       setCurrentPage(currentPage - 1);
     } else if (onCancel) {
       onCancel();
@@ -589,6 +625,15 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         city: formData.city,
         pincode: formData.pincode,
         maritalStatus: formData.maritalStatus,
+        // Previous marriage details (only populated for Divorced / Widowed / Khula)
+        prevMarriageDuration: formData.prevMarriageDurationValue
+          ? `${formData.prevMarriageDurationValue} ${formData.prevMarriageDurationUnit}`
+          : null,
+        childrenMale: parseInt(formData.childrenMaleCount || "0"),
+        childrenFemale: parseInt(formData.childrenFemaleCount || "0"),
+        childrenMaleAges: formData.childrenMaleAges || null,
+        childrenFemaleAges: formData.childrenFemaleAges || null,
+        childrenLivingWith: formData.childrenLivingWith || null,
         highestQualification: formData.highestQualification,
         jobTitle: formData.profession,
         incomeRange: formData.incomeOption === "prefer_not_to_say" 
@@ -735,9 +780,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
     });
   };
 
-  const progressPercent = Math.round((currentPage / 15) * 100);
+  const progressPercent = Math.round((currentPage / 16) * 100);
 
-  // Quick page jump titles
+  // Page titles — page 9 only shown for Divorced/Widowed/Khula
   const PAGE_TITLES = [
     "Welcome & Sign In",
     "Who Is Profile For?",
@@ -747,6 +792,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
     "Current Location",
     "Background & Community",
     "Marital Status",
+    needsPreviousMarriagePage ? "Previous Marriage Details" : "Education & Career",
     "Education & Career",
     "Monthly Income",
     "Profile Gallery",
@@ -817,7 +863,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
               padding: "3px 10px",
               borderRadius: "8px"
             }}>
-              Step {currentPage}/15 • {PAGE_TITLES[currentPage - 1]}
+              Step {currentPage}/16 • {PAGE_TITLES[currentPage - 1]}
             </span>
           </div>
         )}
@@ -1462,7 +1508,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
                   <span>Not Currently Eligible to Continue</span>
                 </div>
                 <p style={{ fontSize: "12px", color: "#881337", lineHeight: 1.5 }}>
-                  <strong>Eligibility requirement:</strong> You must be at least <strong>21 years old</strong> to create a profile on Risthay in compliance with Indian matrimony legal regulations and community guidelines. Please come back once you celebrate your 21st birthday!
+                  <strong>Eligibility requirement:</strong> You must be at least <strong>{minAge} years old</strong> to create a profile on Risthay in compliance with Indian matrimony legal regulations and community guidelines. Please come back once you meet the age requirement!
                 </p>
               </div>
             ) : (
@@ -1901,7 +1947,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
 
             {/* Marital Options with Tooltips / Explanations */}
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "24px" }}>
-              {["Never Married", "Divorced", "Separated", "Widowed", "Khula"].map((st) => {
+              {["Never Married", "Divorced", "Widowed", "Khula"].map((st) => {
                 const isSelected = formData.maritalStatus === st;
                 const explanation = MARITAL_STATUS_EXPLANATIONS[st];
 
@@ -1961,9 +2007,198 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 9: Education & Profession                                 */}
+        {/* PAGE 9: Previous Marriage Details (Divorced / Widowed / Khula) */}
         {/* ============================================================== */}
-        {currentPage === 9 && (
+        {currentPage === 9 && needsPreviousMarriagePage && (
+          <div className="animate-fade">
+            <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
+              Previous Marriage Details
+            </h2>
+            <p style={{ fontSize: "13px", color: "#64748b", marginBottom: "22px" }}>
+              This information helps us find matches who are compatible with your life circumstances.
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "22px", marginBottom: "28px" }}>
+
+              {/* 1. Previous Marriage Duration */}
+              <div>
+                <label style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", display: "block", marginBottom: "8px" }}>
+                  Approx. Duration of Previous Marriage <span style={{ color: "#ef4444" }}>*</span>
+                </label>
+                <div style={{ display: "flex", gap: "10px" }}>
+                  <input
+                    type="number"
+                    min="0"
+                    max="50"
+                    placeholder="e.g. 3"
+                    value={formData.prevMarriageDurationValue}
+                    onChange={(e) => setFormData({ ...formData, prevMarriageDurationValue: e.target.value })}
+                    style={{
+                      flex: 1,
+                      padding: "12px 14px",
+                      borderRadius: "12px",
+                      border: "1.5px solid #cbd5e1",
+                      background: "#f8fafc",
+                      fontSize: "15px",
+                      fontWeight: "700",
+                      color: "#0f172a",
+                      outline: "none"
+                    }}
+                  />
+                  <MobileSelect
+                    value={formData.prevMarriageDurationUnit}
+                    onChange={(v) => setFormData({ ...formData, prevMarriageDurationUnit: v })}
+                    options={["Years", "Months"]}
+                    placeholder="Unit"
+                    label="Duration Unit"
+                  />
+                </div>
+                {formData.prevMarriageDurationValue && (
+                  <p style={{ fontSize: "11px", color: "#059669", marginTop: "5px", fontWeight: "600" }}>
+                    ✓ {formData.prevMarriageDurationValue} {formData.prevMarriageDurationUnit}
+                  </p>
+                )}
+              </div>
+
+              {/* 2. Children — Male */}
+              <div style={{ background: "#f8fafc", borderRadius: "16px", padding: "16px", border: "1px solid #e2e8f0" }}>
+                <label style={{ fontSize: "13px", fontWeight: "800", color: "#0f172a", display: "block", marginBottom: "12px" }}>
+                  👦 Sons (Male Children)
+                </label>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "12px", color: "#475569", fontWeight: "600", minWidth: "60px" }}>How many:</span>
+                  <MobileSelect
+                    value={formData.childrenMaleCount}
+                    onChange={(v) => setFormData({ ...formData, childrenMaleCount: v })}
+                    options={["0", "1", "2", "3", "4", "5+"]}
+                    placeholder="0"
+                    label="Number of Sons"
+                  />
+                </div>
+                {parseInt(formData.childrenMaleCount || "0") > 0 && (
+                  <div>
+                    <label style={{ fontSize: "11px", color: "#64748b", fontWeight: "600", display: "block", marginBottom: "5px" }}>
+                      Ages of sons (e.g. 5, 8):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 4, 7"
+                      value={formData.childrenMaleAges}
+                      onChange={(e) => setFormData({ ...formData, childrenMaleAges: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        border: "1.5px solid #cbd5e1",
+                        background: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: "#0f172a",
+                        outline: "none"
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 3. Children — Female */}
+              <div style={{ background: "#fdf2f8", borderRadius: "16px", padding: "16px", border: "1px solid #f0abfc" }}>
+                <label style={{ fontSize: "13px", fontWeight: "800", color: "#0f172a", display: "block", marginBottom: "12px" }}>
+                  👧 Daughters (Female Children)
+                </label>
+                <div style={{ display: "flex", gap: "10px", alignItems: "center", marginBottom: "10px" }}>
+                  <span style={{ fontSize: "12px", color: "#475569", fontWeight: "600", minWidth: "60px" }}>How many:</span>
+                  <MobileSelect
+                    value={formData.childrenFemaleCount}
+                    onChange={(v) => setFormData({ ...formData, childrenFemaleCount: v })}
+                    options={["0", "1", "2", "3", "4", "5+"]}
+                    placeholder="0"
+                    label="Number of Daughters"
+                  />
+                </div>
+                {parseInt(formData.childrenFemaleCount || "0") > 0 && (
+                  <div>
+                    <label style={{ fontSize: "11px", color: "#64748b", fontWeight: "600", display: "block", marginBottom: "5px" }}>
+                      Ages of daughters (e.g. 3, 6):
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g. 3, 6"
+                      value={formData.childrenFemaleAges}
+                      onChange={(e) => setFormData({ ...formData, childrenFemaleAges: e.target.value })}
+                      style={{
+                        width: "100%",
+                        padding: "10px 12px",
+                        borderRadius: "10px",
+                        border: "1.5px solid #f0abfc",
+                        background: "#ffffff",
+                        fontSize: "13px",
+                        fontWeight: "600",
+                        color: "#0f172a",
+                        outline: "none"
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* 4. Children Living With — only if any children */}
+              {(parseInt(formData.childrenMaleCount || "0") > 0 || parseInt(formData.childrenFemaleCount || "0") > 0) && (
+                <div>
+                  <label style={{ fontSize: "12px", fontWeight: "700", color: "#0f172a", display: "block", marginBottom: "10px" }}>
+                    Children currently living with: <span style={{ color: "#ef4444" }}>*</span>
+                  </label>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    {[
+                      { value: "Living with me", emoji: "👨‍👧", desc: "Children live with you" },
+                      { value: "Living with parents", emoji: "👪", desc: "Living with their grandparents" }
+                    ].map(({ value, emoji, desc }) => (
+                      <div
+                        key={value}
+                        onClick={() => setFormData({ ...formData, childrenLivingWith: value })}
+                        style={{
+                          padding: "12px 14px",
+                          borderRadius: "12px",
+                          border: `2px solid ${formData.childrenLivingWith === value ? "#059669" : "#e2e8f0"}`,
+                          background: formData.childrenLivingWith === value ? "#ecfdf5" : "#ffffff",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          transition: "all 0.15s ease"
+                        }}
+                      >
+                        <span style={{ fontSize: "20px" }}>{emoji}</span>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: "13px", fontWeight: "700", color: formData.childrenLivingWith === value ? "#065f46" : "#0f172a" }}>{value}</div>
+                          <div style={{ fontSize: "11px", color: "#64748b" }}>{desc}</div>
+                        </div>
+                        {formData.childrenLivingWith === value
+                          ? <CheckCircle2 size={18} color="#059669" />
+                          : <div style={{ width: "18px", height: "18px", borderRadius: "50%", border: "2px solid #cbd5e1" }} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            </div>
+
+            <button
+              onClick={handleNextPage}
+              className="btn-primary-action"
+              style={{ width: "100%", padding: "14px", borderRadius: "14px", fontSize: "14px" }}
+            >
+              <span>Continue</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        )}
+
+        {/* ============================================================== */}
+        {/* PAGE 10: Education & Profession                                */}
+        {/* ============================================================== */}
+        {currentPage === 10 && (
           <div className="animate-fade">
             <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
               Tell us about your education and career.
@@ -2063,9 +2298,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 10: Monthly Income                                        */}
+        {/* PAGE 11: Monthly Income                                        */}
         {/* ============================================================== */}
-        {currentPage === 10 && (
+        {currentPage === 11 && (
           <div className="animate-fade">
             <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
               What is your monthly income?
@@ -2221,9 +2456,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 11: Profile Gallery                                       */}
+        {/* PAGE 12: Profile Gallery                                       */}
         {/* ============================================================== */}
-        {currentPage === 11 && (
+        {currentPage === 12 && (
           <div className="animate-fade">
             <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
               Add your best photos.
@@ -2622,9 +2857,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 12: About You                                             */}
+        {/* PAGE 13: About You                                             */}
         {/* ============================================================== */}
-        {currentPage === 12 && (
+        {currentPage === 13 && (
           <div className="animate-fade">
             <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
               Tell us a little about yourself.
@@ -2769,9 +3004,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 13: Aadhaar Verification                                  */}
+        {/* PAGE 14: Aadhaar Verification                                  */}
         {/* ============================================================== */}
-        {currentPage === 13 && (
+        {currentPage === 14 && (
           <div className="animate-fade">
             <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
               Verify your identity.
@@ -2914,9 +3149,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 14: Live Selfie Verification                              */}
+        {/* PAGE 15: Live Selfie Verification                              */}
         {/* ============================================================== */}
-        {currentPage === 14 && (
+        {currentPage === 15 && (
           <div className="animate-fade" style={{ textAlign: "center" }}>
             <h2 style={{ fontSize: "22px", fontWeight: "800", color: "#0f172a", marginBottom: "6px" }}>
               Let&apos;s verify that it&apos;s really you.
@@ -3109,9 +3344,9 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
         )}
 
         {/* ============================================================== */}
-        {/* PAGE 15: Profile Under Review                                  */}
+        {/* PAGE 16: Profile Under Review                                  */}
         {/* ============================================================== */}
-        {currentPage === 15 && (
+        {currentPage === 16 && (
           <div className="animate-fade" style={{ textAlign: "center" }}>
             {/* Header Success / Verification Icon */}
             <div style={{
