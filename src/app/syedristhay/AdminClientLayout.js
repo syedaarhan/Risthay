@@ -179,11 +179,10 @@ export default function AdminClientLayout({ children }) {
         bottom: 0,
         left: 0,
         zIndex: 100,
-        transform: sidebarOpen ? "translateX(0)" : "translateX(0)",
+        transform: sidebarOpen ? "translateX(0)" : "translateX(-100%)",
         transition: "transform 0.25s ease",
         boxShadow: "4px 0 24px rgba(0,0,0,0.12)"
       }}
-      className={sidebarOpen ? "open" : "hidden-mobile"}
       >
         {/* Brand Header */}
         <div style={{
@@ -393,7 +392,6 @@ export default function AdminClientLayout({ children }) {
       {/* Main Content Area */}
       <div style={{
         flex: 1,
-        marginLeft: "270px",
         minHeight: "100vh",
         display: "flex",
         flexDirection: "column"
@@ -510,13 +508,21 @@ export default function AdminClientLayout({ children }) {
       </div>
 
       <style jsx global>{`
-        @media (max-width: 960px) {
-          .hidden-mobile {
-            transform: translateX(-100%) !important;
-          }
-          .open {
+        @media (min-width: 961px) {
+          aside {
             transform: translateX(0) !important;
           }
+          .main-viewport {
+            margin-left: 270px !important;
+          }
+          .show-mobile-btn {
+            display: none !important;
+          }
+          .show-mobile-hamburger {
+            display: none !important;
+          }
+        }
+        @media (max-width: 960px) {
           .main-viewport {
             margin-left: 0 !important;
           }
@@ -525,14 +531,6 @@ export default function AdminClientLayout({ children }) {
           }
           .show-mobile-hamburger {
             display: flex !important;
-          }
-        }
-        @media (min-width: 961px) {
-          .show-mobile-btn {
-            display: none !important;
-          }
-          .show-mobile-hamburger {
-            display: none !important;
           }
         }
       `}</style>

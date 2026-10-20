@@ -3522,51 +3522,7 @@ export default function CompleteOnboardingFlow({ onComplete, onCancel, onDirectL
               <span>{isGoogleLoading ? "Connecting Google..." : "Connect Google Account & Start"}</span>
             </button>
 
-            {/* Offline Bypass Option */}
-            <div style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              margin: "12px 0",
-              color: "#94a3b8",
-              fontSize: "11px"
-            }}>
-              <span style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-              <span>OR DEMO TEST PRESET</span>
-              <span style={{ flex: 1, height: "1px", background: "#e2e8f0" }} />
-            </div>
 
-            <button
-              type="button"
-              onClick={() => {
-                setFormData(prev => ({
-                  ...prev,
-                  authProvider: "google",
-                  email: "syed.rehan@example.com",
-                  firstName: "Syed Rehan",
-                  lastName: "Ali"
-                }));
-                setActiveModal(null);
-                setCurrentPage(2);
-              }}
-              style={{
-                width: "100%",
-                padding: "10px 14px",
-                borderRadius: "12px",
-                border: "1px dashed #cbd5e1",
-                background: "#f8fafc",
-                color: "#475569",
-                fontSize: "12px",
-                fontWeight: "600",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "6px",
-                cursor: "pointer"
-              }}
-            >
-              <span>Continue with Test Identity (Syed Rehan) →</span>
-            </button>
           </div>
         </div>
       )}

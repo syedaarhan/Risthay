@@ -15,8 +15,8 @@ import {
 export default function AdminLoginPage() {
   const router = useRouter();
 
-  const [email, setEmail] = useState("syed@risthay");
-  const [password, setPassword] = useState("syed@risthay@2026");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -208,55 +208,11 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Authorized Admin Card */}
-        <div style={{ marginTop: "24px", paddingTop: "18px", borderTop: "1px solid #e2e8f0", textAlign: "left" }}>
-          <div style={{
-            fontSize: "11px",
-            fontWeight: "700",
-            color: "#64748b",
-            textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            marginBottom: "8px"
-          }}>
-            Authorized Administrator Account:
-          </div>
-
-          <div
-            onClick={() => {
-              setEmail("syed@risthay");
-              setPassword("syed@risthay@2026");
-              setErrorMessage("");
-            }}
-            style={{
-              padding: "12px 14px",
-              borderRadius: "12px",
-              border: "1.5px solid #a7f3d0",
-              background: "#ecfdf5",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between"
-            }}
-          >
-            <div>
-              <div style={{ fontSize: "13px", fontWeight: "800", color: "#065f46", display: "flex", alignItems: "center", gap: "6px" }}>
-                <ShieldCheck size={16} color="#059669" />
-                Syed (Administrator)
-              </div>
-              <div style={{ fontSize: "11px", color: "#047857", marginTop: "2px" }}>
-                ID: <strong>syed@risthay</strong>
-              </div>
-            </div>
-            <span style={{
-              fontSize: "10px",
-              fontWeight: "800",
-              padding: "3px 8px",
-              borderRadius: "6px",
-              background: "#059669",
-              color: "#ffffff"
-            }}>
-              Super Admin
-            </span>
+        {/* Secure Login Notice */}
+        <div style={{ marginTop: "20px", paddingTop: "16px", borderTop: "1px solid #e2e8f0", textAlign: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px", color: "#64748b", fontSize: "11px" }}>
+            <Lock size={11} color="#059669" />
+            <span>This console is restricted to authorised Risthay administrators only.</span>
           </div>
         </div>
       </div>
